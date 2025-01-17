@@ -1,0 +1,68 @@
+FROM php:7.4-apache
+
+# Base Image et Installation des dépendances système
+RUN apt-get update && apt-get install -y \
+# Utilisé pour ajouter des clés de sécurité (par exemple, lors de l'ajout d'un dépôt).
+    gnupg2 \ 
+# Bibliothèque nécessaire pour travailler avec les archives ZIP.
+    libzip-dev \
+# Utilitaire pour extraire les fichiers ZIP.
+    unzip \
+# Bibliothèque pour travailler avec des expressions régulières multibytes
+    libonig-dev \
+# Bibliothèque pour travailler avec XML.
+    libxml2-dev \
+# Bibliothèque pour le traitement d'images PNG.
+    libpng-dev \
+# Bibliothèques pour le support des connexions ODBC, nécessaires pour interagir avec SQL Server.
+    unixodbc \
+    unixodbc-dev \
+# Outils pour récupérer des fichiers via HTTP, souvent utilisés pour télécharger des packages.
+    curl \
+    wget \
+# Paquets nécessaires à la compilation d'autres logiciels.
+    build-essential \
+#  Permet de gérer des dépôts logiciels tiers.
+    software-properties-common \
+    && apt-get clean
+
+# Ajout du dépôt Microsoft pour SQL Server ODBC Driver
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && ACCEPT_EULA=Y apt-get install -y \
+    msodbcsql17 \
+    mssql-tools \
+#Nettoyage du cache APT
+    && apt-get clean
+
+# Install PHP extensions and PECL
+#Installe l'extension PHP pdo_mysql, qui permet à PHP d'interagir avec une base de données MySQL en utilisant PDO (PHP Data Objects).
+RUN docker-php-ext-install pdo_mysql
+
+# Install pdo_sqlsrv (with debugging enabled)
+RUN pecl channel-update pecl.php.net \
+    && pecl install pdo_sqlsrv-5.10.1 \
+    && docker-php-ext-enable pdo_sqlsrv \
+    || (echo "PECL install failed, checking logs..." && tail -n 20 /var/log/pecl.log && exit 1)
+
+# Activation du module Apache
+RUN a2enmod rewrite
+
+# Définition du répertoire de travail
+WORKDIR /var/www/html
+
+# Définition des permissions sur le répertoire de travail
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
+# Expose the default Apache HTTP port
+# Expose le port 80, qui est le port HTTP standard pour les connexions web. Cela permet aux utilisateurs de se connecter à l'application via ce port.
+EXPOSE 80
+
+
+
+#Ce Dockerfile configure un environnement PHP 7.4 avec Apache,
+#ajoute un support pour SQL Server via ODBC, et 
+#installe les extensions PHP nécessaires pour se connecter à une base de données MySQL et SQL Server.
+#Il prépare également Apache avec le module rewrite pour gérer les URLs et 
+#configure correctement les permissions pour le répertoire de travail /var/www/html.

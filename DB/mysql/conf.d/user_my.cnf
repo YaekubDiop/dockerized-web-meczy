@@ -1,0 +1,9 @@
+[client]
+host=db_mysql
+port=3306
+socket=/var/run/mysqld/mysqld.sock
+user=foo
+password=bar
+[client.server1]
+user = exporter
+password = MeczyExp@2024

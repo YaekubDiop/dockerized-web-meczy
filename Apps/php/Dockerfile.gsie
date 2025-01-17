@@ -1,0 +1,47 @@
+FROM php:7.4-apache
+
+# Install system dependencies for building the extension
+RUN apt-get update && apt-get install -y \
+    gnupg2 \
+    libzip-dev \
+    unzip \
+    libonig-dev \
+    libxml2-dev \
+    libpng-dev \
+    unixodbc \
+    unixodbc-dev \
+    curl \
+    wget \
+    build-essential \
+    software-properties-common \
+    && apt-get clean
+
+# Add Microsoft package repository for SQL Server ODBC Driver
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && ACCEPT_EULA=Y apt-get install -y \
+    msodbcsql17 \
+    mssql-tools \
+    && apt-get clean
+
+# Install PHP extensions and PECL
+RUN docker-php-ext-install pdo_mysql
+
+# Install pdo_sqlsrv (with debugging enabled)
+RUN pecl channel-update pecl.php.net \
+    && pecl install pdo_sqlsrv-5.10.1 \
+    && docker-php-ext-enable pdo_sqlsrv \
+    || (echo "PECL install failed, checking logs..." && tail -n 20 /var/log/pecl.log && exit 1)
+
+# Enable Apache rewrite module
+RUN a2enmod rewrite
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Set permissions for the working directory
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
+# Expose the default Apache HTTP port
+EXPOSE 80

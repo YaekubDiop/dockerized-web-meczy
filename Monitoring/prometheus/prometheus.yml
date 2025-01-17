@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "meczy-services"
+    static_configs:
+      - targets:
+          - "10.102.102.10:9100"
+          - "10.102.102.11:9100"
+          - "10.102.102.12:9100" # Localhost of Prometheus
+        #  - "meczy-nas.meczy.sn:9090"
+          - "10.102.102.15:9100"
+  - job_name: "mysql"
+    static_configs:
+      - targets:
+          - "meczy-db.meczy.sn:9104"  # MySQL Exporter runs on port 9104
+
+  - job_name: "mssql"
+    static_configs:
+      - targets:
+          - "meczy-db.meczy.sn:4000" # Replace with MSSQL Exporter port if different
+  
+  - job_name: 'pfsense'
+    metrics_path: /snmp
+    static_configs:
+      - targets:
+          - '10.102.102.2:161'  # Replace with your pfSense IP address
+    params:
+      module: [pfsense]  # Specify the pfSense module
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 'meczy-monitoring.meczy.sn:9116'  # Address 

@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+# Définition du service
+  tpe_php_apache:
+# Construction de l'image Docker
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+# Nom du conteneur
+    container_name: tpe_php_apache
+# Permet de lier des répertoires ou fichiers de l'hôte vers le conteneur.
+    volumes:
+      - /opt/meczy/tpe:/var/www/html
+    networks:
+      - app_network
+    expose:
+      - "8081"
+    ports:
+      - "8081:80"
+# Variables d'environnement
+    environment:
+      DB_HOST: db_mysql
+      DB_PORT: 3306
+      DB_NAME: meczy
+      DB_USER: appnum/2019
+      DB_PASSWORD: meczyapp@num2019-mzex00
+
+  tpe_dev_php_apache:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: tpe_dev_php_apache
+    volumes:
+      - /opt/meczy/tpe-dev:/var/www/html
+    networks:
+      - app_network
+    expose:
+      - "8081"
+    ports:
+      - "8081:80"
+    environment:
+      DB_HOST: db_mysql
+      DB_PORT: 3306
+      DB_NAME: meczy
+      DB_USER: appnum/2019
+      DB_PASSWORD: meczyapp@num2019-mzex00
+
+  workflow_php_apache:
+    build:
+      context: ./php
+      dockerfile: Dockerfile.workflow
+    container_name: workflow_php_apache
+    volumes:
+      - /opt/meczy/workflow:/var/www/html
+    networks:
+      - app_network
+    expose:
+      - "8082"
+    ports:
+      - "8082:80"
+    environment:
+      DB_HOST: db_mysql
+      DB_PORT: 3306
+      DB_NAME: workflow
+      DB_USER: workflow
+      DB_PASSWORD: HQdR@BHt9VvXtFvj
+
+  gsie_php_apache:
+    build:
+      context: ./php
+      dockerfile: Dockerfile.gsie
+    container_name: gsie_php_apache
+    volumes:
+      - /opt/meczy/gsie:/var/www/html
+    networks:
+      - app_network
+    expose:
+      - "8083"
+    ports:
+      - "8083:80"
+
+  api_php_apache:
+    build:
+      context: ./php
+      dockerfile: Dockerfile.api
+    container_name: api_php_apache
+    volumes:
+      - /opt/meczy/api:/var/www/html
+    networks:
+      - app_network
+    expose:
+      - "8084"
+    ports:
+      - "8084:80"
+
+networks:
+  app_network:
+    driver: bridge
+
+
+
+
+
+
+
+#Ce fichier docker-compose.yml décrit la configuration pour un service nommé tpe_php_apache, 
+#qui exécute un conteneur avec PHP et Apache. 
+#L'image est construite à partir du répertoire ./php et du Dockerfile spécifié. 
+#Le conteneur partage un volume avec l'hôte, expose le port 8081 et le mappe au port 80 du conteneur. 
+#Des variables d'environnement sont définies pour permettre à 
+#l'application de se connecter à une base de données MySQL (probablement un autre service Docker dans le même réseau).
+
+#Il est important de s'assurer que le réseau app_network et le service db_mysql (la base de données) 
+#sont définis ailleurs dans le fichier Docker Compose pour que tout fonctionne correctement.

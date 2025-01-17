@@ -1,0 +1,93 @@
+#
+# MECZY DB STACK
+#
+
+services:
+  db_mysql:
+    image: mysql:5.7
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: nMgbCbZWaYdMktBN
+    volumes:
+      - /var/lib/mysql:/var/lib/mysql # Bind-mount MySQL data to the local system
+      - ./mysql/conf.d:/etc/mysql/conf.d # Custom MySQL configuration for performance
+      - /var/log/mysql:/var/log/mysql  # Bind mount for MySQL logs
+    networks:
+      - db_network
+    ports:
+      - "3306:3306" # Expose MySQL port for external access
+    restart: always # Automatically restart the container
+    deploy:
+      resources:
+        limits:
+          memory: 4g # Limit memory usage to 3 GB
+          cpus: "0.8" # Limit CPU usage to 0.8 vCPUs
+        reservations:
+          memory: 2g # Reserve 2 GB of memory
+          cpus: "0.5" # Reserve 0.5 vCPU
+    logging:
+      options:
+        max-size: "10m" # Limit log file size
+        max-file: "3"   # Rotate logs to keep the last 3 files
+
+  mysqld_exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysqld_exporter
+    volumes:
+      - ./mysql/conf.d/user_my.cnf:/.my.cnf
+    networks:
+      - db_network
+    ports:
+      - "9104:9104" # Expose exporter port for Prometheus to scrape
+    restart: always
+    depends_on:
+      - db_mysql
+
+  db_sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_db
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: meczy@SqlServer
+      MSSQL_MEMORY_LIMIT_MB: 3072 # Limit SQL Server memory usage to 3 GB
+      MSSQL_PID: Developer
+    volumes:
+      - /var/opt/mssql:/var/opt/mssql # Bind-mount SQL Server data to the local system
+      - ./sqlserver/mssql.conf:/var/opt/mssql/mssql.conf # Custom SQL Server configuration
+    networks:
+      - db_network
+    ports:
+      - "1433:1433" # Expose SQL Server port for external access
+    restart: always # Automatically restart the container
+    deploy:
+      resources:
+        limits:
+          memory: 4g # Limit memory usage to 3 GB
+          cpus: "0.8" # Limit CPU usage to 0.8 vCPUs
+        reservations:
+          memory: 2g # Reserve 2 GB of memory
+          cpus: "0.5" # Reserve 0.5 vCPU
+    logging:
+      options:
+        max-size: "10m" # Limit log file size
+        max-file: "3"   # Rotate logs to keep the last 3 files
+
+  mssql_exporter:
+    image: awaragi/prometheus-mssql-exporter
+    container_name: mssql_exporter
+    environment:
+      SERVER: "sqlserver_db"
+      USERNAME: "sa"
+      PASSWORD: "meczy@SqlServer"
+      DEBUG: "app"
+    networks:
+      - db_network
+    ports:
+      - "4000:4000" # Expose exporter port for Prometheus to scrape
+    restart: always
+    depends_on:
+      - db_sqlserver
+
+networks:
+  db_network:
+    driver: bridge

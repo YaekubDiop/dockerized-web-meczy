@@ -1,0 +1,10 @@
+---
+auths:
+  public_v2:
+    version: 2
+modules:
+  pfsense:
+    walk:
+      - 1.3.6.1.2.1.1  # System metrics
+      - 1.3.6.1.2.1.2  # Interfaces
+      - 1.3.6.1.4.1.2021 # UCD SNMP metrics (CPU, memory, etc.)
